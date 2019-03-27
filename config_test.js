@@ -1,3 +1,13 @@
+var url = process.env.URL;
+var username = process.env.USERNAME;
+var password = process.env.PASSWORD;
+var interval = process.env.INTERVAL;
+
+console.log("Getting URL: " + url);
+console.log("Getting USERNAME: " + username);
+console.log("Getting PASSWORD: " + password);
+console.log("Getting INTERVAL: " + interval);
+
 module.exports = {
   // URL: "http://localhost:3000/",
   // URL: "http://www.latabledarc.com/trianon-assiette-a-pain.html",
