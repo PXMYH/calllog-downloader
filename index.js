@@ -6,7 +6,9 @@ var job = new cronJob({
   // runs every X minutes defined in configuration file
   cronTime: "* */" + configFile.INTERVAL + " * * * *",
   onTick: function() {
-    console.log("You will see this message every second");
+    console.log(
+      "You will see this message every " + configFile.INTERVAL + " minutes"
+    );
 
     (async () => {
       const browser = await puppeteer.launch({
@@ -25,8 +27,11 @@ var job = new cronJob({
       });
 
       console.log("opening page " + configFile.URL + " ...");
-      await page.goto(configFile.URL, { waitUntil: "networkidle2" });
+      await page.goto(configFile.URL, {
+        waitUntil: "networkidle2"
+      });
 
+      // ******** FILTER ******** //
       // type date and filter result
       gmtDate = new Date();
 
@@ -44,16 +49,19 @@ var job = new cronJob({
       console.log("press enter ...");
       await page.keyboard.press("Enter");
 
+      // ******** DOWNLOAD ******** //
+
       // click on export
       // page.waitForSelector(configFile.EXPORT_SELECTOR);
       // await page.click(configFile.EXPORT_SELECTOR);
       // await page.waitForSelector(configFile.CSV_SELECTOR);
 
-      // save report
+      // download report
 
       browser.close();
     })();
   },
+  runOnInit: true,
   start: false,
   timeZone: "America/New_York"
 });
