@@ -3,8 +3,8 @@ var configFile = require("./config_test.js");
 var cronJob = require("cron").CronJob;
 
 var job = new cronJob({
-  // runs every 5 minutes
-  cronTime: "* */5 * * * *",
+  // runs every X minutes defined in configuration file
+  cronTime: "* */" + configFile.INTERVAL + " * * * *",
   onTick: function() {
     console.log("You will see this message every second");
 
