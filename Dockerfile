@@ -1,6 +1,7 @@
 FROM node:11.12-alpine
 
-LABEL Maintainer <Michael Hu>
+LABEL Maintainer="Michael Hu"
+LABEL Email="pirixmanagement@gmail.com"
 
 WORKDIR /app
 
