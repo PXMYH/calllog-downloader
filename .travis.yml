@@ -1,0 +1,24 @@
+# Disable sudo to speed up the build
+sudo: false
+
+# Set the build language to node_js
+language: node_js
+
+# Set the node.js version to 11
+node_js:
+  - "11"
+
+# cache dependency
+cache: npm
+
+# Install the codecov pip dependency
+install:
+  - npm install
+
+services:
+  - docker
+
+after_success:
+  - docker build -t coeus77/callog-downloader .
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+  - docker push coeus77/callog-downloader
