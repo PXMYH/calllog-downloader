@@ -6,6 +6,15 @@ Download calllogs
 
 ## Get Started
 
+Run the script directly from local
+
+```bash
+# follow instructions on https://treehouse.github.io/installation-guides/windows/node-windows.html to install node and npm on windows
+npm start
+```
+
+Docker solution
+
 ```bash
 # Install Docker in Windows
 # follow instructions on https://docs.docker.com/v17.09/docker-for-windows/install/
