@@ -140,20 +140,15 @@ var job = new cronJob({
       console.log("pressing enter ...");
       await page.keyboard.press("Enter");
 
-      // for demo purpose
-      // FILE_SELECTOR = "#documentsbutton";
-      // page.waitForSelector(FILE_SELECTOR);
-      // page.click(FILE_SELECTOR);
-
       // ******** DOWNLOAD ******** //
 
       // click on export
-      // page.waitForSelector(configFile.EXPORT_SELECTOR);
-      // await page.click(configFile.EXPORT_SELECTOR);
+      page.waitForSelector(configFile.EXPORT_SELECTOR);
+      await page.click(configFile.EXPORT_SELECTOR);
 
       // click on csv
-      // await page.waitForSelector(configFile.CSV_SELECTOR);
-      // await page.click(configFile.CSV_SELECTOR);
+      await page.waitForSelector(configFile.CSV_SELECTOR);
+      await page.click(configFile.CSV_SELECTOR);
 
       // click on proceed to download
 
