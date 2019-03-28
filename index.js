@@ -120,6 +120,7 @@ var job = new cronJob({
       });
 
       // ******** FILTER ******** //
+
       // type date and filter result
       gmtDate = new Date();
 
@@ -133,7 +134,6 @@ var job = new cronJob({
       var currentGMTString =
         "" + currentYear + "-" + currentMonth + "-" + currentDate;
 
-      // for demo purpose
       // var currentGMTString = "" + currentYear + currentMonth + currentDate;
       console.log("typing in filter ...");
       await page.type(configFile.DATE_SLECTOR, currentGMTString);
@@ -146,37 +146,37 @@ var job = new cronJob({
       page.waitForSelector(configFile.EXPORT_SELECTOR);
       await page.click(configFile.EXPORT_SELECTOR);
 
-      // click on csv
-      await page.waitForSelector(configFile.CSV_SELECTOR);
-      await page.click(configFile.CSV_SELECTOR);
+      // click on Excel
+      await page.waitForSelector(configFile.EXCEL_SELECTOR);
+      await page.click(configFile.EXCEL_SELECTOR);
 
       // click on proceed to download
+      let allData = [];
+      page.on("response", async resp => {
+        // get response text body
+        resp.text().then(textBody => {
+          console.log(textBody);
+        });
 
-      // download report
-      // const downloadUrl = await page.evaluate(() => {
-      //   const link = document.evaluate(
-      //     `//a[text()="Short Selling (csv)"]`,
-      //     document,
-      //     null,
-      //     XPathResult.FIRST_ORDERED_NODE_TYPE,
-      //     null
-      //   ).singleNodeValue;
-      //   if (link) {
-      //     // Prevent link from opening up in a new tab. Puppeteer won't respect
-      //     // the Page.setDownloadBehavior on the new tab and the file ends up in the
-      //     // default download folder.
-      //     link.target = "";
-      //     link.click();
-      //     return link.href;
-      //   }
-      //   return null;
-      // });
+        //get and parse the url for later filtering
+        const parsedUrl = new URL(resp.url);
+        console.log("response URL: " + parsedUrl);
 
-      // if (!downloadUrl) {
-      //   console.warn("Did not find link to download!");
-      //   await browser.close();
-      //   return;
-      // }
+        //filter out the requests we do not need, or when the request fails
+        const needAjaxURL = "/e911-lam-gui/e911LAMReporting.do";
+        if (parsedUrl.pathname != needAjaxURL || !resp.ok) return;
+
+        //do with the json data, e.g:
+        const data = await resp.json();
+
+        // no more data
+        if (!data.list) return;
+
+        //add data to a single array for later use
+        allData = allData.concat(data.list);
+        //now you can trigger the next scroll
+        //do the same above to get the updated last li, and scroll that into view...
+      });
 
       // // Wait for file response to complete.
       // await new Promise(resolve => {
@@ -187,7 +187,7 @@ var job = new cronJob({
       //   });
       // });
 
-      // console.log("File downloaded successfully!");
+      console.log("File downloaded successfully!");
 
       // await waitForFileExists(`${DOWNLOAD_PATH}/output.csv`);
       // console.log("File Exists!");
