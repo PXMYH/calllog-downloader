@@ -106,34 +106,35 @@ async function downloadTest1(page) {
   console.log("executing downloadTest1 ...");
 
   let allData = [];
-  page.on("response", async resp => {
+  await page.on("response", async resp => {
     // get response text body
     resp.text().then(textBody => {
       console.log(textBody);
     });
 
     // get response status code
-    var status = resp.status;
+    var status = resp.status();
     console.log("response status code: " + status);
 
     // get response status text
-    var status_text = resp.statusText;
+    var status_text = resp.statusText();
     console.log("response status text: " + status_text);
 
     // get response headers
-    var headers = resp.headers;
+    var headers = resp.headers();
     console.log("response headers: " + headers);
 
     // get and parse the url for later filtering
-    const parsedUrl = new URL(resp.url);
+    const parsedUrl = new URL(resp.url());
     console.log("response URL: " + parsedUrl);
 
     // filter out the requests we do not need, or when the request fails
     const needAjaxURL = "/e911-lam-gui/e911LAMReporting.do";
     if (parsedUrl.pathname != needAjaxURL || !resp.ok) return;
 
-    // do with the json data, e.g:
+    // do with the json data
     const data = await resp.json();
+    console.log("response data: " + data);
 
     // no more data
     if (!data.list) return;
@@ -148,6 +149,7 @@ async function downloadTest1(page) {
 }
 
 // intercept the request and promisify
+// this didn't work
 async function downloadTest2(page) {
   console.log("executing downloadTest2 ...");
   await page.setRequestInterception(true);
@@ -249,7 +251,7 @@ var job = new cronJob({
 
       // ******** DOWNLOAD ******** //
       await downloadTest1(page);
-      await downloadTest2(page);
+      // await downloadTest2(page);
 
       // await waitForFileExists(`${DOWNLOAD_PATH}/output.csv`);
       // console.log("File Exists!");
@@ -265,6 +267,7 @@ var job = new cronJob({
       // console.log(path, `${size}B`);
 
       // ******** LOGOUT ******** //
+      // await page.close();
       // await browser.close();
     })().catch(e => {
       console.error(e.stack);
