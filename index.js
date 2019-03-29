@@ -81,6 +81,67 @@ async function download(page, f) {
   return filePath;
 }
 
+function getCurrentDate() {
+  // type date and filter result
+  gmtDate = new Date();
+
+  var currentMonth = gmtDate.getUTCMonth() + 1;
+  currentMonth = (currentMonth < 10 ? "0" : "") + currentMonth;
+
+  var currentDate = gmtDate.getUTCDate();
+  currentDate = (currentDate < 10 ? "0" : "") + currentDate;
+
+  var currentYear = "" + gmtDate.getUTCFullYear();
+  var currentGMTString =
+    "" + currentYear + "-" + currentMonth + "-" + currentDate;
+
+  return currentGMTString;
+}
+
+async function downloadTest1(page) {
+  // click on proceed to download
+  let allData = [];
+  page.on("response", async resp => {
+    // get response text body
+    resp.text().then(textBody => {
+      console.log(textBody);
+    });
+
+    // get response status code
+    var status = resp.status;
+    console.log("response status code: " + status);
+
+    // get response status text
+    var status_text = resp.statusText;
+    console.log("response status text: " + status_text);
+
+    // get response headers
+    var headers = resp.headers;
+    console.log("response headers: " + headers);
+
+    //get and parse the url for later filtering
+    const parsedUrl = new URL(resp.url);
+    console.log("response URL: " + parsedUrl);
+
+    //filter out the requests we do not need, or when the request fails
+    const needAjaxURL = "/e911-lam-gui/e911LAMReporting.do";
+    if (parsedUrl.pathname != needAjaxURL || !resp.ok) return;
+
+    //do with the json data, e.g:
+    const data = await resp.json();
+
+    // no more data
+    if (!data.list) return;
+
+    //add data to a single array for later use
+    allData = allData.concat(data.list);
+    //now you can trigger the next scroll
+    //do the same above to get the updated last li, and scroll that into view...
+  });
+
+  console.log("File downloaded successfully!");
+}
+
 var job = new cronJob({
   // runs every X minutes defined in configuration file
   cronTime: "* " + configFile.INTERVAL + " * * * *",
@@ -94,7 +155,6 @@ var job = new cronJob({
         headless: false,
         ignoreHTTPSErrors: true // bypass security warning page
       });
-      // try {
       console.log("opening chrome headless browser ...");
       const page = await browser.newPage();
       console.log("opening a new tab ...");
@@ -122,25 +182,13 @@ var job = new cronJob({
       // ******** FILTER ******** //
 
       // type date and filter result
-      gmtDate = new Date();
-
-      var currentMonth = gmtDate.getUTCMonth() + 1;
-      currentMonth = (currentMonth < 10 ? "0" : "") + currentMonth;
-
-      var currentDate = gmtDate.getUTCDate();
-      currentDate = (currentDate < 10 ? "0" : "") + currentDate;
-
-      var currentYear = "" + gmtDate.getUTCFullYear();
-      var currentGMTString =
-        "" + currentYear + "-" + currentMonth + "-" + currentDate;
-
-      // var currentGMTString = "" + currentYear + currentMonth + currentDate;
-      console.log("typing in filter ...");
-      await page.type(configFile.DATE_SLECTOR, currentGMTString);
+      var currentDateString = getCurrentDate();
+      console.log("typing in filter date " + currentDateString + " ...");
+      await page.type(configFile.DATE_SLECTOR, currentDateString);
       console.log("pressing enter ...");
       await page.keyboard.press("Enter");
 
-      // ******** DOWNLOAD ******** //
+      // ******** EXPORT ******** //
 
       // click on export
       page.waitForSelector(configFile.EXPORT_SELECTOR);
@@ -150,44 +198,17 @@ var job = new cronJob({
       await page.waitForSelector(configFile.EXCEL_SELECTOR);
       await page.click(configFile.EXCEL_SELECTOR);
 
-      // click on proceed to download
-      let allData = [];
-      page.on("response", async resp => {
-        // get response text body
-        resp.text().then(textBody => {
-          console.log(textBody);
-        });
-
-        //get and parse the url for later filtering
-        const parsedUrl = new URL(resp.url);
-        console.log("response URL: " + parsedUrl);
-
-        //filter out the requests we do not need, or when the request fails
-        const needAjaxURL = "/e911-lam-gui/e911LAMReporting.do";
-        if (parsedUrl.pathname != needAjaxURL || !resp.ok) return;
-
-        //do with the json data, e.g:
-        const data = await resp.json();
-
-        // no more data
-        if (!data.list) return;
-
-        //add data to a single array for later use
-        allData = allData.concat(data.list);
-        //now you can trigger the next scroll
-        //do the same above to get the updated last li, and scroll that into view...
+      // ******** CONFIRM ******** //
+      // sometime there'll be dialog poping up for confirmation
+      // if number of rows in form exceeds threshold
+      // TODO: what if dialog doesn't appear?
+      page.on("dialog", async dialog => {
+        console.log(dialog.message());
+        await dialog.accept();
       });
 
-      // // Wait for file response to complete.
-      // await new Promise(resolve => {
-      //   page.on("response", async resp => {
-      //     if (resp.url() === downloadUrl) {
-      //       resolve();
-      //     }
-      //   });
-      // });
-
-      console.log("File downloaded successfully!");
+      // ******** DOWNLOAD ******** //
+      await downloadTest1(page);
 
       // await waitForFileExists(`${DOWNLOAD_PATH}/output.csv`);
       // console.log("File Exists!");
@@ -201,12 +222,11 @@ var job = new cronJob({
 
       // const { size } = await util.promisify(fs.stat)(path);
       // console.log(path, `${size}B`);
-      // } finally {
+
+      // ******** LOGOUT ******** //
       // await browser.close();
-      // }
     })().catch(e => {
       console.error(e.stack);
-      // process.exit(1);
     });
   },
   runOnInit: true,
