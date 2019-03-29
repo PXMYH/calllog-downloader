@@ -61,7 +61,7 @@ async function download(page, f) {
       .substr(2, 8)}`
   );
   await util.promisify(fs.mkdir)(downloadPath);
-  console.error("Download directory:", downloadPath);
+  console.log("Download directory:", downloadPath);
 
   await page._client.send("Page.setDownloadBehavior", {
     behavior: "allow",
@@ -70,7 +70,7 @@ async function download(page, f) {
 
   await f();
 
-  console.error("Downloading...");
+  console.log("Downloading...");
   let fileName;
   while (!fileName || fileName.endsWith(".crdownload")) {
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -78,7 +78,7 @@ async function download(page, f) {
   }
 
   const filePath = path.resolve(downloadPath, fileName);
-  console.error("Downloaded file:", filePath);
+  console.log("Downloaded file:", filePath);
   return filePath;
 }
 
@@ -122,15 +122,15 @@ async function downloadTest1(page) {
     var headers = resp.headers;
     console.log("response headers: " + headers);
 
-    //get and parse the url for later filtering
+    // get and parse the url for later filtering
     const parsedUrl = new URL(resp.url);
     console.log("response URL: " + parsedUrl);
 
-    //filter out the requests we do not need, or when the request fails
+    // filter out the requests we do not need, or when the request fails
     const needAjaxURL = "/e911-lam-gui/e911LAMReporting.do";
     if (parsedUrl.pathname != needAjaxURL || !resp.ok) return;
 
-    //do with the json data, e.g:
+    // do with the json data, e.g:
     const data = await resp.json();
 
     // no more data
@@ -138,13 +138,14 @@ async function downloadTest1(page) {
 
     //add data to a single array for later use
     allData = allData.concat(data.list);
-    //now you can trigger the next scroll
-    //do the same above to get the updated last li, and scroll that into view...
+
+    console.log("all data: " + allData);
   });
 
-  console.log("File downloaded successfully!");
+  console.log("finishing downloadTest1 ...");
 }
 
+// intercept the request and promisify
 async function downloadTest2(page) {
   console.log("executing downloadTest2 ...");
   await page.setRequestInterception(true);
@@ -164,15 +165,16 @@ async function downloadTest2(page) {
     headers: xRequest._headers
   };
 
-  /* add the cookies */
+  // add the cookies
   const cookies = await page.cookies();
   options.headers.Cookie = cookies
     .map(ck => ck.name + "=" + ck.value)
     .join(";");
 
-  /* resend the request */
+  // resend the request
   const response = await request(options);
   console.log("response data: " + response);
+  console.log("finishing downloadTest2 ...");
 }
 
 var job = new cronJob({
