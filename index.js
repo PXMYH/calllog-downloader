@@ -5,6 +5,8 @@ const puppeteer = require("puppeteer");
 const util = require("util");
 const request = require("request-promise");
 
+// Action: for real connection, uncomment the following line
+// var configFile = require("./config.js");
 var configFile = require("./config_test.js");
 var cronJob = require("cron").CronJob;
 
@@ -226,12 +228,15 @@ var job = new cronJob({
       // ******** EXPORT ******** //
 
       // click on export
+      console.log("waiting for export selector ...");
       page.waitForSelector(configFile.EXPORT_SELECTOR);
+      console.log("clicking export selector ...");
       await page.click(configFile.EXPORT_SELECTOR);
 
       // click on Excel
       await page.waitForSelector(configFile.EXCEL_SELECTOR);
       await page.click(configFile.EXCEL_SELECTOR);
+      console.log("pressing enter ...");
 
       // ******** CONFIRM ******** //
       // sometime there'll be dialog poping up for confirmation
