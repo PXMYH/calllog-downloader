@@ -55,7 +55,7 @@ function waitForFileExists(filePath, timeout = 15000) {
 }
 
 // set up, invoke the function, wait for the download to complete
-async function download(page, f) {
+async function download1(page, f) {
   const downloadPath = path.resolve(
     process.cwd(),
     `download-${Math.random()
@@ -101,7 +101,35 @@ function getCurrentDate() {
   return currentGMTString;
 }
 
-async function downloadTest1(page) {
+function getCurrentHour() {
+  gmtDate = new Date();
+  var currentHours = gmtDate.getUTCHours();
+  currentHours = (currentHours < 10 ? "0" : "") + currentHours;
+
+  var currentHourString = "" + currentHours;
+
+  return currentHourString;
+}
+
+function setFilter(currentDate, currentHour) {
+  currentDate = getCurrentDate();
+  currentHour = getCurrentHour();
+
+  if (str(currentHour).startsWith("0")) {
+    console.log("current hour is between 0 ~ 9, add 0 to filter");
+    filter = currentDate + " " + "0";
+  } else if (str(currentHour).startsWith("1")) {
+    console.log("current hour is between 10 ~ 19, add 1 to filter");
+    filter = currentDate + " " + "1";
+  } else if (str(currentHour).startsWith("2")) {
+    console.log("current hour is between 20 ~ 24, add 2 to filter");
+    filter = currentDate + " " + "2";
+  } else {
+    filter = currentDate;
+  }
+}
+
+async function download(page) {
   // click on proceed to download
   console.log("executing downloadTest1 ...");
 
@@ -148,39 +176,6 @@ async function downloadTest1(page) {
   console.log("finishing downloadTest1 ...");
 }
 
-// intercept the request and promisify
-// this didn't work
-async function downloadTest2(page) {
-  console.log("executing downloadTest2 ...");
-  await page.setRequestInterception(true);
-
-  const xRequest = await new Promise(resolve => {
-    page.on("request", request => {
-      request.abort();
-      resolve(request);
-    });
-  });
-
-  const options = {
-    encoding: null,
-    method: xRequest._method,
-    uri: xRequest._url,
-    body: xRequest._postData,
-    headers: xRequest._headers
-  };
-
-  // add the cookies
-  const cookies = await page.cookies();
-  options.headers.Cookie = cookies
-    .map(ck => ck.name + "=" + ck.value)
-    .join(";");
-
-  // resend the request
-  const response = await request(options);
-  console.log("response data: " + response);
-  console.log("finishing downloadTest2 ...");
-}
-
 var job = new cronJob({
   // runs every X minutes defined in configuration file
   cronTime: "* " + configFile.INTERVAL + " * * * *",
@@ -221,9 +216,9 @@ var job = new cronJob({
       // ******** FILTER ******** //
 
       // type date and filter result
-      var currentDateString = getCurrentDate();
-      console.log("typing in filter date " + currentDateString + " ...");
-      await page.type(configFile.DATE_SLECTOR, currentDateString);
+      var filterString = setFilter();
+      console.log("typing in filter date " + filterString + " ...");
+      await page.type(configFile.DATE_SLECTOR, filterString);
       console.log("pressing enter ...");
       await page.keyboard.press("Enter");
 
@@ -250,18 +245,7 @@ var job = new cronJob({
       });
 
       // ******** DOWNLOAD ******** //
-      await downloadTest1(page);
-      // await downloadTest2(page);
-
-      // await waitForFileExists(`${DOWNLOAD_PATH}/output.csv`);
-      // console.log("File Exists!");
-
-      // download method #2
-      // const path = await download(page, () =>
-      //   page.click(
-      //     'a[href="http://file-examples.com/wp-content/uploads/2017/02/file_example_CSV_5000.csv"]'
-      //   )
-      // );
+      await download(page);
 
       // const { size } = await util.promisify(fs.stat)(path);
       // console.log(path, `${size}B`);
