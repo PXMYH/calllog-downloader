@@ -3,6 +3,7 @@ const os = require("os");
 const path = require("path");
 const puppeteer = require("puppeteer");
 const util = require("util");
+const request = require("request-promise");
 
 var configFile = require("./config_test.js");
 var cronJob = require("cron").CronJob;
@@ -100,6 +101,8 @@ function getCurrentDate() {
 
 async function downloadTest1(page) {
   // click on proceed to download
+  console.log("executing downloadTest1 ...");
+
   let allData = [];
   page.on("response", async resp => {
     // get response text body
@@ -140,6 +143,36 @@ async function downloadTest1(page) {
   });
 
   console.log("File downloaded successfully!");
+}
+
+async function downloadTest2(page) {
+  console.log("executing downloadTest2 ...");
+  await page.setRequestInterception(true);
+
+  const xRequest = await new Promise(resolve => {
+    page.on("request", request => {
+      request.abort();
+      resolve(request);
+    });
+  });
+
+  const options = {
+    encoding: null,
+    method: xRequest._method,
+    uri: xRequest._url,
+    body: xRequest._postData,
+    headers: xRequest._headers
+  };
+
+  /* add the cookies */
+  const cookies = await page.cookies();
+  options.headers.Cookie = cookies
+    .map(ck => ck.name + "=" + ck.value)
+    .join(";");
+
+  /* resend the request */
+  const response = await request(options);
+  console.log("response data: " + response);
 }
 
 var job = new cronJob({
@@ -209,6 +242,7 @@ var job = new cronJob({
 
       // ******** DOWNLOAD ******** //
       await downloadTest1(page);
+      await downloadTest2(page);
 
       // await waitForFileExists(`${DOWNLOAD_PATH}/output.csv`);
       // console.log("File Exists!");
