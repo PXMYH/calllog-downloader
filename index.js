@@ -3,11 +3,11 @@ const os = require("os");
 const path = require("path");
 const puppeteer = require("puppeteer");
 const util = require("util");
-const request = require("request-promise");
+var json2xls = require("json2xls");
 
 // Action: for real connection, uncomment the following line
-// var configFile = require("./config.js");
-var configFile = require("./config_test.js");
+var configFile = require("./config.js");
+// var configFile = require("./config_test.js");
 var cronJob = require("cron").CronJob;
 
 const DOWNLOAD_PATH = path.resolve(__dirname, "downloads");
@@ -55,7 +55,7 @@ function waitForFileExists(filePath, timeout = 15000) {
 }
 
 // set up, invoke the function, wait for the download to complete
-async function download1(page, f) {
+async function download(page, f) {
   const downloadPath = path.resolve(
     process.cwd(),
     `download-${Math.random()
@@ -65,7 +65,9 @@ async function download1(page, f) {
   await util.promisify(fs.mkdir)(downloadPath);
   console.log("Download directory:", downloadPath);
 
-  await page._client.send("Page.setDownloadBehavior", {
+  const client = await page.target().createCDPSession();
+
+  await client.send("Page.setDownloadBehavior", {
     behavior: "allow",
     downloadPath: downloadPath
   });
@@ -111,9 +113,32 @@ function getCurrentHour() {
   return currentHourString;
 }
 
+function getCurrentGMTString() {
+  var currentDate = getCurrentDate();
+  var currentHour = getCurrentHour();
+  var currentMinutes = gmtDate.getUTCMinutes();
+  currentMinutes = (currentMinutes < 10 ? "0" : "") + currentMinutes;
+
+  var currentSeconds = gmtDate.getUTCSeconds();
+  currentSeconds = (currentSeconds < 10 ? "0" : "") + currentSeconds;
+
+  var currentGMTString =
+    "" +
+    currentDate +
+    "-" +
+    currentHour +
+    ":" +
+    currentMinutes +
+    ":" +
+    currentSeconds +
+    " GMT";
+
+  return currentGMTString;
+}
+
 function setFilter(currentDate, currentHour) {
-  currentDate = getCurrentDate();
-  currentHour = getCurrentHour();
+  var currentDate = getCurrentDate();
+  var currentHour = getCurrentHour();
 
   if (str(currentHour).startsWith("0")) {
     console.log("current hour is between 0 ~ 9, add 0 to filter");
@@ -129,9 +154,9 @@ function setFilter(currentDate, currentHour) {
   }
 }
 
-async function download(page) {
+async function exportFile(page) {
   // click on proceed to download
-  console.log("executing downloadTest1 ...");
+  console.log("executing exportFile ...");
 
   let allData = [];
   await page.on("response", async resp => {
@@ -163,6 +188,9 @@ async function download(page) {
     // do with the json data
     const data = await resp.json();
     console.log("response data: " + data);
+    var xls = json2xls(data);
+    var currentTimestamp = getCurrentGMTString();
+    fs.writeFileSync("data-" + currentTimestamp + ".xlsx", xls, "binary");
 
     // no more data
     if (!data.list) return;
@@ -173,7 +201,7 @@ async function download(page) {
     console.log("all data: " + allData);
   });
 
-  console.log("finishing downloadTest1 ...");
+  console.log("finishing exportFile ...");
 }
 
 var job = new cronJob({
@@ -192,12 +220,6 @@ var job = new cronJob({
       console.log("opening chrome headless browser ...");
       const page = await browser.newPage();
       console.log("opening a new tab ...");
-      const client = await page.target().createCDPSession();
-
-      await client.send("Page.setDownloadBehavior", {
-        behavior: "allow",
-        downloadPath: DOWNLOAD_PATH
-      });
 
       // ******** LOGIN ******** //
 
@@ -245,14 +267,17 @@ var job = new cronJob({
       });
 
       // ******** DOWNLOAD ******** //
-      await download(page);
+      // TODO: Test 1, just export and save file
+      exportFile(page);
 
-      // const { size } = await util.promisify(fs.stat)(path);
-      // console.log(path, `${size}B`);
+      // TODO: Test 2, make a downlaod directory and save the file
+      const path = await download(page, exportFile(page));
+      const { size } = await util.promisify(fs.stat)(path);
+      console.log(path, `${size}B`);
 
       // ******** LOGOUT ******** //
-      // await page.close();
-      // await browser.close();
+      await page.close();
+      await browser.close();
     })().catch(e => {
       console.error(e.stack);
     });

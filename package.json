@@ -20,6 +20,7 @@
   "homepage": "https://github.com/PXMYH/calllog-downloader#readme",
   "dependencies": {
     "cron": "^1.7.0",
+    "json2xls": "^0.1.2",
     "node": "^11.12.0",
     "puppeteer": "^1.13.0",
     "request": "^2.88.0",
