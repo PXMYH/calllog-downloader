@@ -10,6 +10,7 @@ Run the script directly from local
 
 ```bash
 # follow instructions on https://treehouse.github.io/installation-guides/windows/node-windows.html to install node and npm on windows
+npm install
 npm start
 ```
 
