@@ -65,9 +65,7 @@ async function download(page, f) {
   await util.promisify(fs.mkdir)(downloadPath);
   console.log("Download directory:", downloadPath);
 
-  const client = await page.target().createCDPSession();
-
-  await client.send("Page.setDownloadBehavior", {
+  await page._client.send("Page.setDownloadBehavior", {
     behavior: "allow",
     downloadPath: downloadPath
   });
