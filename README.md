@@ -1,6 +1,6 @@
 # Calllog Downloader
 
-[![Build Status](https://travis-ci.com/PXMYH/calllog-downloader.svg?branch=master)](https://travis-ci.com/PXMYH/calllog-downloader)
+[![Build Status](https://travis-ci.com/PXMYH/calllog-downloader.svg?branch=master)](https://travis-ci.com/PXMYH/calllog-downloader) [![Greenkeeper badge](https://badges.greenkeeper.io/PXMYH/calllog-downloader.svg)](https://greenkeeper.io/)
 
 Download calllogs
 
